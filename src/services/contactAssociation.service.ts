@@ -1,8 +1,8 @@
 import ContactAssociation from "../models/contactAssociation.model.js";
 
 interface User {
-    brokerId: string;
-    firmId: string;
+    sub: string;
+    firm_id: string;
 }
 
 class ContactAssociationService {
@@ -28,8 +28,8 @@ class ContactAssociationService {
                 origin: payload.origin,
                 contactId: payload.contactId,
                 listingId: payload.listingId,
-                brokerId: user.brokerId,
-                firmId: user.firmId,
+                sub: user.sub,
+                firm_id: user.firm_id,
             }));
 
             return await ContactAssociation.insertMany(documents);
@@ -37,17 +37,17 @@ class ContactAssociationService {
             this.handleError(err);
         }
     }
-    async getContactAssociations(listingId: string, brokerId: string) {
+    async getContactAssociations(listingId: string, sub: string) {
         try {
-            const docs = await ContactAssociation.find({ listingId, brokerId });
+            const docs = await ContactAssociation.find({ listingId, sub });
             return docs.map((doc) => doc.toObject({ getters: true }));
         } catch (err) {
             this.handleError(err);
         }
     }
-    async deleteContactAssociation(id: string,brokerId: string) {
+    async deleteContactAssociation(id: string,sub: string) {
         try {
-            return await ContactAssociation.findOneAndDelete({ _id: id, brokerId });
+            return await ContactAssociation.findOneAndDelete({ _id: id, sub });
         } catch (err) {
             this.handleError(err);
         }
@@ -64,12 +64,12 @@ class ContactAssociationService {
             this.handleError(err);
         }
     }
-    async updateContactAssociationData(id: string,brokerId: string,
+    async updateContactAssociationData(id: string,sub: string,
         data: { contactName: string; contactMobile: string; type: string; source: string }
     ) {
         try {
             const updatedData = await ContactAssociation.findOneAndUpdate(
-                { _id: id, brokerId },
+                { _id: id, sub },
                 data,
                 { new: true, runValidators: true }
             );

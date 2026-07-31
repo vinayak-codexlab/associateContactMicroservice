@@ -18,7 +18,7 @@ export const Protect = (req:Request, res:Response, next:NextFunction)=>{
         return next(new ApiError(401, "Authentication Failed !"));
     }
     try{
-        const decoded = jwt.verify(accessToken, env.JWT_SECRET) as {brokerId: string, firmId:string};
+        const decoded = jwt.verify(accessToken, env.JWT_SECRET) as {sub: string, firm_id:string};
         req.user = decoded;
         next();
     } catch{

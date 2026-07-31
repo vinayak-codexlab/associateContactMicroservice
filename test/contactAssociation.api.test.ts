@@ -17,7 +17,7 @@ vi.mock("../src/services/contactAssociation.service.js", () => ({
 import app from "../src/app.js";
 
 const baseUrl = "/v1/contact-association";
-const user = { brokerId: "broker-123", firmId: "firm-456" };
+const user = { sub: "broker-123", firm_id: "firm-456" };
 
 const authCookie = () =>
     `accessToken=${jwt.sign(user, process.env.JWT_SECRET as string)}`;
@@ -76,7 +76,7 @@ describe("contact association endpoints", () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ success: true, data: contacts });
-        expect(serviceMock.getContactAssociations).toHaveBeenCalledWith("listing-123", user.brokerId);
+        expect(serviceMock.getContactAssociations).toHaveBeenCalledWith("listing-123", user.sub);
     });
 
     it("DELETE /:id deletes an association owned by the authenticated broker", async () => {
@@ -88,7 +88,7 @@ describe("contact association endpoints", () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ success: true, message: "contact deleted successfully" });
-        expect(serviceMock.deleteContactAssociation).toHaveBeenCalledWith("association-123", user.brokerId);
+        expect(serviceMock.deleteContactAssociation).toHaveBeenCalledWith("association-123", user.sub);
     });
 
     it("PATCH /:id/type changes the contact type", async () => {
@@ -132,7 +132,7 @@ describe("contact association endpoints", () => {
         });
         expect(serviceMock.updateContactAssociationData).toHaveBeenCalledWith(
             "association-123",
-            user.brokerId,
+            user.sub,
             updatePayload,
         );
     });
