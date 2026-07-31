@@ -6,6 +6,7 @@ const contactSchema = z.object({
     contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
     type: z.nativeEnum(ContactType)
 });
+
 export const createContactAssociationSchema = z.object({
     body: z.object({
         contacts: z.array(contactSchema).min(1, "At least one contact is required"),
@@ -14,4 +15,31 @@ export const createContactAssociationSchema = z.object({
         contactId: z.string().optional(),
         listingId: z.string().min(1)
     }),
+});
+
+export const deleteContactAssociationSchema = z.object({
+    params: z.object({
+        id: z.string().min(1, "Contact id is required")
+    })
+});
+
+export const updateContactAssociationTypeSchema = z.object({
+    params: z.object({
+        id: z.string().min(1, "Contact id is required")
+    }),
+    body: z.object({
+        type: z.nativeEnum(ContactType)
+    })
+});
+
+export const updateContactAssociationDataSchema = z.object({
+    params: z.object({
+        id: z.string().min(1, "Contact id is required")
+    }),
+    body: z.object({
+        contactName: z.string().min(1, "Contact name length is too short!").max(50).trim(),
+        contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
+        type: z.nativeEnum(ContactType),
+        source: z.nativeEnum(ContactSource)
+    })
 });

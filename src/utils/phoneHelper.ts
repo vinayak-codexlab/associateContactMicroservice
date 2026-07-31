@@ -16,15 +16,19 @@ export const encryptContact = (text:string):string=>{
     return RANDOM_IV.toString("hex") + encrypted;
 };
 export const decryptContact = (text:string):string=>{
-    if (!text) return text;
-    const ivHex = text.slice(0, LENGTH * 2);
-    const iv = Buffer.from(ivHex, "hex");
+    try{
+        if (!text) return text;
+        const ivHex = text.slice(0, LENGTH * 2);
+        const iv = Buffer.from(ivHex, "hex");
 
-    if (iv.length != LENGTH) return text;
-    const encrptedText = text.slice(LENGTH*2);
+        if (iv.length !== LENGTH) return text;
+        const encrptedText = text.slice(LENGTH * 2);
 
-    const decipher = crypto.createDecipheriv(ALGORITHM, encryption_key, iv);
-    let decrypted = decipher.update(encrptedText, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    return decrypted;
+        const decipher = crypto.createDecipheriv(ALGORITHM, encryption_key, iv);
+        let decrypted = decipher.update(encrptedText, "hex", "utf8");
+        decrypted += decipher.final("utf8");
+        return decrypted;
+    } catch(err){
+        return text;
+    }
 };

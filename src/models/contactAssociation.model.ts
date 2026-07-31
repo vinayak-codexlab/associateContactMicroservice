@@ -13,8 +13,8 @@ const contactAssociationSchema = new Schema({
     source: {type:String, enum:Object.values(ContactSource)},
     origin: {type:String, enum:Object.values(ContactOrigin)},
     contactId: {type:String},
-    listingId: {type:String, index:true},
-    brokerId: {type:String, index:true},
+    listingId: {type:String},
+    brokerId: {type:String},
     firmId: {type:String}
 },{
     timestamps:true,
