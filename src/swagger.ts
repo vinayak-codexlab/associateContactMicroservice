@@ -6,7 +6,7 @@ export const swaggerSpec = {
     info: {
         title: "Contact Association Service API",
         version: "1.0.0",
-        description: "Swagger documentation for the contact association endpoints. Use Try it out to execute requests directly from the browser. Click Authorize and paste a Bearer token, or keep using the accessToken cookie.",
+        description: "Swagger documentation for the contact association endpoints. Use Try it out to execute requests directly from the browser. Click Authorize and paste a Bearer token, or keep using the accessToken cookie. If your client sends user_token instead, the API accepts that cookie name too.",
     },
     servers: [{ url: "/", description: "Local server" }],
     tags: [{ name: "Contact Associations", description: "Manage broker contact associations" }],
