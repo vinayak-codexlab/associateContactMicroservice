@@ -32,3 +32,11 @@ export const decryptContact = (text:string):string=>{
         return text;
     }
 };
+export const hashMobile = (text:string):string=>{
+    try{
+        if(!text) return text;
+        return crypto.createHash("sha256").update(text.trim()).digest("hex");
+    } catch(err){
+        return "";
+    }
+};

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "../src/utils/ApiError.js";
 
 const serviceMock = vi.hoisted(() => ({
     createContactAssociation: vi.fn(),
@@ -95,6 +96,23 @@ describe("contact association endpoints", () => {
         );
     });
 
+    it("returns a conflict when a duplicate contact is submitted for the same listing and type", async () => {
+        serviceMock.createContactAssociation.mockRejectedValueOnce(
+            new ApiError(409, "This mobile already exists for this listingId and type !"),
+        );
+
+        const response = await request(app)
+            .post(`${baseUrl}/`)
+            .set("Cookie", authCookie())
+            .send(createPayload);
+
+        expect(response.status).toBe(409);
+        expect(response.body).toEqual({
+            success: false,
+            message: "This mobile already exists for this listingId and type !",
+        });
+    });
+
     it("GET /:listingId returns the authenticated broker's contacts", async () => {
         const contacts = [{ _id: "association-123", listingId: "listing-123" }];
         serviceMock.getContactAssociations.mockResolvedValue(contacts);
@@ -136,6 +154,29 @@ describe("contact association endpoints", () => {
             data: updatedContact,
         });
         expect(serviceMock.updateContactAssociationType).toHaveBeenCalledWith("association-123", "tenant");
+    });
+
+    it("returns a conflict when updating a contact would duplicate an existing listing/type/mobile", async () => {
+        const updatePayload = {
+            contactName: "Grace Hopper",
+            contactMobile: "9123456789",
+            type: "contact_person",
+            source: "import",
+        };
+        serviceMock.updateContactAssociationData.mockRejectedValueOnce(
+            new ApiError(409, "This mobile already exists for this listingId and type !"),
+        );
+
+        const response = await request(app)
+            .put(`${baseUrl}/association-123/data`)
+            .set("Cookie", authCookie())
+            .send(updatePayload);
+
+        expect(response.status).toBe(409);
+        expect(response.body).toEqual({
+            success: false,
+            message: "This mobile already exists for this listingId and type !",
+        });
     });
 
     it("PUT /:id/data updates contact details for the authenticated broker", async () => {

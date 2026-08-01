@@ -1,6 +1,7 @@
 import ContactAssociation from "../models/contactAssociation.model.js";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
 import { ApiError } from "../utils/ApiError.js";
+import { hashMobile } from "../utils/phoneHelper.js";
 
 const ContactAssociationModel: any = ContactAssociation;
 
@@ -27,8 +28,15 @@ interface CreatePayload {
 
 class ContactAssociationService {
     private handleError(error: unknown): never {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
         if (error instanceof Error) {
-            const customError = error as Error & { statusCode?: number };
+            const customError = error as Error & { statusCode?: number; code?: number };
+            if (customError.code === 11000) {
+                throw new ApiError(409, "This mobile already exists for this listingId and type !");
+            }
             customError.statusCode = customError.statusCode || 500;
             customError.message = customError.message || "Internal Server Error";
             throw customError;
@@ -42,6 +50,16 @@ class ContactAssociationService {
         try {
             const operations = payload.contacts.map(async (contact) => {
                 const associationId = contact._id || contact.id;
+                const hashedMobile = await hashMobile(contact.contactMobile);
+                const existingMobile = await ContactAssociationModel.findOne({
+                    listingId: payload.listingId,
+                    type: contact.type,
+                    hashMobile: hashedMobile,
+                    $or: [{ sub: user.sub }, { sub: { $exists: false } }],
+                });
+                if (existingMobile) {
+                    throw new ApiError(409, "This mobile already exists for this listingId and type !");
+                }
                 if (associationId) {
                     const existing = await ContactAssociationModel.findOne({ _id: associationId, sub: user.sub });
                     if (!existing) {
@@ -52,6 +70,7 @@ class ContactAssociationService {
                         {
                             contactName: contact.contactName,
                             contactMobile: contact.contactMobile,
+                            hashMobile: hashedMobile,
                             type: contact.type,
                             source: payload.source,
                         },
@@ -62,6 +81,7 @@ class ContactAssociationService {
                 const created = await ContactAssociationModel.create({
                     contactName: contact.contactName,
                     contactMobile: contact.contactMobile,
+                    hashMobile: hashedMobile,
                     type: contact.type,
                     source: payload.source,
                     origin: payload.origin,
@@ -120,9 +140,20 @@ class ContactAssociationService {
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
+            const hashedMobile = await hashMobile(data.contactMobile);
+            const existingMobile = await ContactAssociationModel.findOne({
+                listingId: existing.listingId,
+                type: data.type as ContactType,
+                hashMobile: hashedMobile,
+                _id: { $ne: id },
+                $or: [{ sub }, { sub: { $exists: false } }],
+            });
+            if (existingMobile) {
+                throw new ApiError(409, "This mobile already exists for this listingId and type !");
+            }
             const updatedData = await ContactAssociationModel.findOneAndUpdate(
                 { _id: id, sub },
-                data,
+                {...data, hashMobile:hashedMobile},
                 { new: true, runValidators: true }
             );
             return updatedData ? updatedData.toObject({ getters: true }) : null;

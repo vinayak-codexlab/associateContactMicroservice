@@ -9,6 +9,7 @@ const contactAssociationSchema = new Schema({
         set(v : string){ return encryptContact(v)},
         get(v : string){return decryptContact(v)}
     },
+    hashMobile:{type:String},
     type: {type:String, enum:Object.values(ContactType)},
     source: {type:String, enum:Object.values(ContactSource)},
     origin: {type:String, enum:Object.values(ContactOrigin)},
@@ -21,6 +22,8 @@ const contactAssociationSchema = new Schema({
     toJSON: {getters:true},
     toObject: {getters:true},    
 });
+
+contactAssociationSchema.index({ listingId: 1, type: 1, hashMobile: 1 }, { unique: true, sparse: true });
 
 export default mongoose.model("ContactAssociation", contactAssociationSchema);
 
