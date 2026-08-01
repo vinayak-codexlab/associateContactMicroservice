@@ -8,7 +8,7 @@ export enum ContactType {
 export enum ContactSource {
   MANUAL = "manual",
   IMPORT = "import",
-  RESIDE_CONTACT = "resideContact",
+  REZIDE_CONTACT = "rezideContact",
 }
 export enum ContactOrigin {
   APP = "app",
