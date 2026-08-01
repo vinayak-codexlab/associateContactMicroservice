@@ -6,7 +6,11 @@ import { ApiError } from "../utils/ApiError.js";
 
 export const Protect = (req:Request, res:Response, next:NextFunction)=>{
     const authHeader = req.headers.authorization;
-    const rawToken = req.cookies?.accessToken || req.cookies?.token || authHeader;
+    const rawToken =
+        req.cookies?.accessToken ||
+        req.cookies?.user_token ||
+        req.cookies?.token ||
+        authHeader;
     if(!rawToken){
         return next(new ApiError(401, "Authentication Failed !"));
     }

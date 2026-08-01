@@ -20,8 +20,8 @@ import app from "../src/app.js";
 const baseUrl = "/v1/user/listing";
 const user = { sub: "broker-123", firm_id: "firm-456" };
 
-const authCookie = () =>
-    `accessToken=${jwt.sign(user, process.env.JWT_SECRET as string)}`;
+const authCookie = (name = "accessToken") =>
+    `${name}=${jwt.sign(user, process.env.JWT_SECRET as string)}`;
 
 const createPayload = {
     contacts: [
@@ -56,6 +56,19 @@ describe("contact association endpoints", () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ success: true, data: contacts });
+    });
+
+    it("accepts user_token cookies when accessToken is not present", async () => {
+        const contacts = [{ _id: "association-123", listingId: "listing-123" }];
+        serviceMock.getContactAssociations.mockResolvedValue(contacts);
+
+        const response = await request(app)
+            .get(`${baseUrl}/listing-123`)
+            .set("Cookie", authCookie("user_token"));
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ success: true, data: contacts });
+        expect(serviceMock.getContactAssociations).toHaveBeenCalledWith("listing-123", user.sub);
     });
 
     it("serves swagger documentation for the contact-association endpoints", async () => {
