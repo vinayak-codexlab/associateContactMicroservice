@@ -16,7 +16,7 @@ vi.mock("../src/services/contactAssociation.service.js", () => ({
 
 import app from "../src/app.js";
 
-const baseUrl = "/v1/contact-association";
+const baseUrl = "/v1/user/listing";
 const user = { sub: "broker-123", firm_id: "firm-456" };
 
 const authCookie = () =>
