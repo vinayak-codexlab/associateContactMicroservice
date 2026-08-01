@@ -45,6 +45,35 @@ describe("contact association endpoints", () => {
         expect(serviceMock.getContactAssociations).not.toHaveBeenCalled();
     });
 
+    it("accepts bearer tokens from Swagger UI authorization", async () => {
+        const contacts = [{ _id: "association-123", listingId: "listing-123" }];
+        serviceMock.getContactAssociations.mockResolvedValue(contacts);
+
+        const response = await request(app)
+            .get(`${baseUrl}/listing-123`)
+            .set("Authorization", `Bearer ${jwt.sign(user, process.env.JWT_SECRET as string)}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ success: true, data: contacts });
+    });
+
+    it("serves swagger documentation for the contact-association endpoints", async () => {
+        const response = await request(app).get("/api-docs.json");
+
+        expect(response.status).toBe(200);
+        expect(response.body.openapi).toBe("3.0.3");
+        expect(response.body.paths).toHaveProperty("/v1/user/listing/");
+        expect(response.body.paths).toHaveProperty("/v1/user/listing/{listingId}");
+    });
+
+    it("serves the interactive swagger ui page", async () => {
+        const response = await request(app).get("/api-docs/");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain("Swagger UI");
+        expect(response.text).toContain("swagger-ui-bundle.js");
+    });
+
     it("POST / creates contact associations for the authenticated broker", async () => {
         const createdContacts = [{ _id: "association-123", ...createPayload.contacts[0] }];
         serviceMock.createContactAssociation.mockResolvedValue(createdContacts);
