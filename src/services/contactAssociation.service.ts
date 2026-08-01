@@ -2,6 +2,7 @@ import ContactAssociation from "../models/contactAssociation.model.js";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
 import { ApiError } from "../utils/ApiError.js";
 import { hashMobile } from "../utils/phoneHelper.js";
+import { deleteCache, getCache, setCache } from "../utils/redisHelper.js";
 
 const ContactAssociationModel: any = ContactAssociation;
 
@@ -27,6 +28,18 @@ interface CreatePayload {
 }
 
 class ContactAssociationService {
+    private getListingCacheKey(listingId: string, sub: string) {
+        return `contact-associations:${sub}:${listingId}`;
+    }
+
+    private async invalidateListingCache(listingId?: string, sub?: string) {
+        if (!listingId || !sub) {
+            return;
+        }
+
+        await deleteCache(this.getListingCacheKey(listingId, sub));
+    }
+
     private handleError(error: unknown): never {
         if (error instanceof ApiError) {
             throw error;
@@ -92,15 +105,31 @@ class ContactAssociationService {
                 });
                 return (created as any).toObject({ getters: true });
             });
-            return await Promise.all(operations);
+
+            try {
+                return await Promise.all(operations);
+            } finally {
+                await this.invalidateListingCache(payload.listingId, user.sub);
+            }
         } catch (err) {
             this.handleError(err);
         }
     }
     async getContactAssociations(listingId: string, sub: string) {
         try {
+            const cacheKey = this.getListingCacheKey(listingId, sub);
+            const cached = await getCache<any[]>(cacheKey);
+
+            if (cached) {
+                return cached;
+            }
+
             const docs = await ContactAssociationModel.find({ listingId, sub }).sort({createdAt:-1}).limit(10);
-            return docs.map((doc: any) => doc.toObject({ getters: true }));
+            const result = docs.map((doc: any) => doc.toObject({ getters: true }));
+
+            await setCache(cacheKey, result);
+
+            return result;
         } catch (err) {
             this.handleError(err);
         }
@@ -111,7 +140,11 @@ class ContactAssociationService {
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
-            return await ContactAssociationModel.findOneAndDelete({ _id: id, sub });
+
+            const deleted = await ContactAssociationModel.findOneAndDelete({ _id: id, sub });
+            await this.invalidateListingCache(existing.listingId, sub);
+
+            return deleted;
         } catch (err) {
             this.handleError(err);
         }
@@ -127,6 +160,9 @@ class ContactAssociationService {
                 { type },
                 { new: true, runValidators: true }
             );
+
+            await this.invalidateListingCache(existing.listingId, existing.sub);
+
             return updatedDoc ? updatedDoc.toObject({ getters: true }) : null;
         } catch (err) {
             this.handleError(err);
@@ -156,6 +192,9 @@ class ContactAssociationService {
                 {...data, hashMobile:hashedMobile},
                 { new: true, runValidators: true }
             );
+
+            await this.invalidateListingCache(existing.listingId, sub);
+
             return updatedData ? updatedData.toObject({ getters: true }) : null;
         } catch (err) {
             this.handleError(err);

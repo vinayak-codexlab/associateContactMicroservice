@@ -9,4 +9,5 @@ export const env = cleanEnv(process.env ,{
     MONGO_URI: str(),
     JWT_SECRET: str(),
     ENCRYPTION_SECRET: str(),
+    REDIS_URI: str(),
 });

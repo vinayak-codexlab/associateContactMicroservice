@@ -1,5 +1,11 @@
-import {z} from "zod";
+import {string, z} from "zod";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
+import { str } from "envalid";
+
+//hexadecimal-24
+const objectIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, "Invalid ObjectId");
 
 const contactSchema = z.object({
     _id: z.string().min(1).optional(),
@@ -15,8 +21,10 @@ export const createContactAssociationSchema = z.object({
         contacts: z.array(contactSchema).min(1, "At least one contact is required"),
         source: z.nativeEnum(ContactSource),
         origin: z.nativeEnum(ContactOrigin),
-        contactId: z.string().optional(),
-        listingId: z.string().min(1)
+        contactId: objectIdSchema.optional(),
+        listingId: objectIdSchema,
+        // contactId: string().optional(),
+        // listingId: string(),
     }),
 });
 
