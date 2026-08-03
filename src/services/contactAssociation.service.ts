@@ -26,6 +26,13 @@ interface CreatePayload {
     origin: ContactOrigin;
     listingId: string;
 }
+interface UpdateContactAssociationData {
+    contactName: string;
+    contactMobile: string;
+    type: ContactType;
+    source: ContactSource;
+    contactId?: string | undefined;
+}
 
 class ContactAssociationService {
     private getListingCacheKey(listingId: string, sub: string) {
@@ -64,12 +71,16 @@ class ContactAssociationService {
             const operations = payload.contacts.map(async (contact) => {
                 const associationId = contact._id || contact.id;
                 const hashedMobile = await hashMobile(contact.contactMobile);
-                const existingMobile = await ContactAssociationModel.findOne({
+                const duplicateQuery: any = {
                     listingId: payload.listingId,
                     type: contact.type,
                     hashMobile: hashedMobile,
                     $or: [{ sub: user.sub }, { sub: { $exists: false } }],
-                });
+                };
+                if (associationId) {
+                    duplicateQuery._id = { $ne: associationId };
+                }
+                const existingMobile = await ContactAssociationModel.findOne(duplicateQuery);
                 if (existingMobile) {
                     throw new ApiError(409, "This mobile already exists for this listingId and type !");
                 }
@@ -86,6 +97,7 @@ class ContactAssociationService {
                             hashMobile: hashedMobile,
                             type: contact.type,
                             source: contact.source,
+                            contactId: contact.contactId,
                         },
                         { new: true, runValidators: true }
                     );
@@ -149,14 +161,14 @@ class ContactAssociationService {
             this.handleError(err);
         }
     }
-    async updateContactAssociationType(id: string,type: string) {
+    async updateContactAssociationType(id: string,sub:string, type: ContactType) {
         try {
-            const existing = await ContactAssociationModel.findOne({ _id: id });
+            const existing = await ContactAssociationModel.findOne({ _id: id, sub });
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
             const updatedDoc = await ContactAssociationModel.findOneAndUpdate(
-                { _id: id },
+                { _id: id, sub },
                 { type },
                 { new: true, runValidators: true }
             );
@@ -169,7 +181,8 @@ class ContactAssociationService {
         }
     }
     async updateContactAssociationData(id: string,sub: string,
-        data: { contactName: string; contactMobile: string; type: string; source: string }
+        // data: { contactName: string; contactMobile: string; type: ContactType; source: ContactSource; contactId?: string; }
+        data: UpdateContactAssociationData
     ) {
         try {
             const existing = await ContactAssociationModel.findOne({ _id: id, sub });
@@ -179,7 +192,7 @@ class ContactAssociationService {
             const hashedMobile = await hashMobile(data.contactMobile);
             const existingMobile = await ContactAssociationModel.findOne({
                 listingId: existing.listingId,
-                type: data.type as ContactType,
+                type: data.type,
                 hashMobile: hashedMobile,
                 _id: { $ne: id },
                 $or: [{ sub }, { sub: { $exists: false } }],

@@ -1,6 +1,5 @@
-import {string, z} from "zod";
+import {z} from "zod";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
-import { str } from "envalid";
 
 //hexadecimal-24
 const objectIdSchema = z
@@ -49,6 +48,7 @@ export const updateContactAssociationDataSchema = z.object({
         contactName: z.string().min(1, "Contact name length is too short!").max(50).trim(),
         contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
         type: z.nativeEnum(ContactType),
-        source: z.nativeEnum(ContactSource)
+        source: z.nativeEnum(ContactSource),
+        contactId: z.string().optional()
     })
 });

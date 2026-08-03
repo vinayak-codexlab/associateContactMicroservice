@@ -21,8 +21,11 @@ router.use(Protect);
 
 router.route("/").post(createContactAssociation);
 router.route("/:listingId").get(getContactAssociations);
-router.route("/:id").delete(deleteContactAssociation);
 router.route("/:id/type").patch(updateContactAssociationType);
-router.route("/:id/data").put(updateContactAssociationData)
+router.route("/:id")
+    .delete(deleteContactAssociation)
+    .put(updateContactAssociationData);
+
+// router.route("/:id/data").put(updateContactAssociationData)
 
 export default router;

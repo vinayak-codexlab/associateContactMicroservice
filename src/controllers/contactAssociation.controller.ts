@@ -20,13 +20,14 @@ export const getContactAssociations = asyncHandler(async(req: Request, res: Resp
 });
 export const deleteContactAssociation = asyncHandler(async(req: Request, res: Response) => {
     const validatedData = deleteContactAssociationSchema.parse({ params: req.params });
-    const result = await contactAssociationService.deleteContactAssociation(validatedData.params.id, req.user!.sub);
+    await contactAssociationService.deleteContactAssociation(validatedData.params.id, req.user!.sub);
     res.status(200).json({ success: true, message: "contact deleted successfully"});
 });
 export const updateContactAssociationType = asyncHandler(async(req: Request, res: Response) => {
     const validatedData = updateContactAssociationTypeSchema.parse({ body: req.body, params: req.params });
     const result = await contactAssociationService.updateContactAssociationType(
         validatedData.params.id,
+        req.user!.sub,
         validatedData.body.type
     );
     res.status(200).json({ success: true, message: "contact type updated successfully", data: result });
