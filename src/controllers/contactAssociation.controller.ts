@@ -11,7 +11,7 @@ import contactAssociationService from "../services/contactAssociation.service.js
 export const createContactAssociation = asyncHandler(async(req: Request, res: Response) => {
     const validatedData = createContactAssociationSchema.parse({ body: req.body });
     const result = await contactAssociationService.createContactAssociation(validatedData.body, req.user!);
-    res.status(201).json({ success: true, message: "contact created successfully", data: result });
+    res.status(201).json({ success: true, message: "Contact associated successfully", data: result });
 });
 export const getContactAssociations = asyncHandler(async(req: Request, res: Response) => {
     const listingId = req.params.listingId as string;

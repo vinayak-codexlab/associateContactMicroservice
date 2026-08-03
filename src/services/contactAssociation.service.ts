@@ -124,7 +124,7 @@ class ContactAssociationService {
                 return cached;
             }
 
-            const docs = await ContactAssociationModel.find({ listingId, sub }).sort({createdAt:-1}).limit(10);
+            const docs = await ContactAssociationModel.find({ listingId, sub }).select('-hashMobile').sort({createdAt:-1}).limit(10);
             const result = docs.map((doc: any) => doc.toObject({ getters: true }));
 
             await setCache(cacheKey, result);
