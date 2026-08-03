@@ -1,7 +1,7 @@
 import ContactAssociation from "../models/contactAssociation.model.js";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
 import { ApiError } from "../utils/ApiError.js";
-import { hashMobile } from "../utils/phoneHelper.js";
+import { hashMobile, normalizePhoneNumber } from "../utils/phoneHelper.js";
 import { deleteCache, getCache, setCache } from "../utils/redisHelper.js";
 
 const ContactAssociationModel: any = ContactAssociation;
@@ -70,7 +70,8 @@ class ContactAssociationService {
         try {
             const operations = payload.contacts.map(async (contact) => {
                 const associationId = contact._id || contact.id;
-                const hashedMobile = await hashMobile(contact.contactMobile);
+                const normalizedMobile = normalizePhoneNumber(contact.contactMobile);
+                const hashedMobile = await hashMobile(normalizedMobile);
                 const duplicateQuery: any = {
                     listingId: payload.listingId,
                     type: contact.type,
@@ -93,7 +94,7 @@ class ContactAssociationService {
                         { _id: associationId, sub: user.sub },
                         {
                             contactName: contact.contactName,
-                            contactMobile: contact.contactMobile,
+                            contactMobile: normalizedMobile,
                             hashMobile: hashedMobile,
                             type: contact.type,
                             source: contact.source,
@@ -105,7 +106,7 @@ class ContactAssociationService {
                 }
                 const created = await ContactAssociationModel.create({
                     contactName: contact.contactName,
-                    contactMobile: contact.contactMobile,
+                    contactMobile: normalizedMobile,
                     hashMobile: hashedMobile,
                     type: contact.type,
                     contactId: contact.contactId,
@@ -189,7 +190,8 @@ class ContactAssociationService {
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
-            const hashedMobile = await hashMobile(data.contactMobile);
+            const normalizedMobile = normalizePhoneNumber(data.contactMobile);
+            const hashedMobile = await hashMobile(normalizedMobile);
             const existingMobile = await ContactAssociationModel.findOne({
                 listingId: existing.listingId,
                 type: data.type,
@@ -202,7 +204,7 @@ class ContactAssociationService {
             }
             const updatedData = await ContactAssociationModel.findOneAndUpdate(
                 { _id: id, sub },
-                {...data, hashMobile:hashedMobile},
+                {...data, contactMobile: normalizedMobile, hashMobile:hashedMobile},
                 { new: true, runValidators: true }
             );
 

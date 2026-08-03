@@ -5,6 +5,22 @@ const encryption_key = crypto.createHash("sha256").update(env.ENCRYPTION_SECRET)
 
 const LENGTH = 16;
 const ALGORITHM = "aes-256-cbc";
+const MIN_PHONE_DIGITS = 7;
+const MAX_PHONE_DIGITS = 15;
+
+export const normalizePhoneNumber = (text: string): string => {
+    if (!text) return text;
+
+    return text.replace(/[^\d]/g, "");
+};
+
+export const isValidInternationalPhoneNumber = (text: string): boolean => {
+    const normalized = normalizePhoneNumber(text);
+
+    if (!normalized) return false;
+    if (normalized.length < MIN_PHONE_DIGITS || normalized.length > MAX_PHONE_DIGITS) return false;
+    return /^\d+$/.test(normalized);
+};
 
 export const encryptContact = (text:string):string=>{
     if (!text) return text;
@@ -35,7 +51,7 @@ export const decryptContact = (text:string):string=>{
 export const hashMobile = (text:string):string=>{
     try{
         if(!text) return text;
-        return crypto.createHash("sha256").update(text.trim()).digest("hex");
+        return crypto.createHash("sha256").update(normalizePhoneNumber(text)).digest("hex");
     } catch(err){
         return "";
     }

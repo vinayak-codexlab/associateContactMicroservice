@@ -1,5 +1,6 @@
 import {z} from "zod";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
+import { isValidInternationalPhoneNumber } from "../utils/phoneHelper.js";
 
 //hexadecimal-24
 const objectIdSchema = z
@@ -10,7 +11,9 @@ const contactSchema = z.object({
     _id: z.string().min(1).optional(),
     id: z.string().min(1).optional(),
     contactName: z.string().min(1,"Contact name lenth is too short !").max(50).trim(),
-    contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
+    contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
+        message: "Invalid mobile number",
+    }),
     type: z.nativeEnum(ContactType),
     source: z.nativeEnum(ContactSource),
     contactId: objectIdSchema.optional(),
@@ -46,7 +49,9 @@ export const updateContactAssociationDataSchema = z.object({
     }),
     body: z.object({
         contactName: z.string().min(1, "Contact name length is too short!").max(50).trim(),
-        contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
+        contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
+            message: "Invalid mobile number",
+        }),
         type: z.nativeEnum(ContactType),
         source: z.nativeEnum(ContactSource),
         contactId: z.string().optional()
