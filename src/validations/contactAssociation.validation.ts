@@ -12,19 +12,17 @@ const contactSchema = z.object({
     id: z.string().min(1).optional(),
     contactName: z.string().min(1,"Contact name lenth is too short !").max(50).trim(),
     contactMobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number"),
-    type: z.nativeEnum(ContactType)
+    type: z.nativeEnum(ContactType),
+    source: z.nativeEnum(ContactSource),
+    contactId: objectIdSchema.optional(),
 });
 
 export const createContactAssociationSchema = z.object({
     body: z.object({
         // id: z.string().optional(),
         contacts: z.array(contactSchema).min(1, "At least one contact is required"),
-        source: z.nativeEnum(ContactSource),
         origin: z.nativeEnum(ContactOrigin),
-        contactId: objectIdSchema.optional(),
         listingId: objectIdSchema,
-        // contactId: string().optional(),
-        // listingId: string(),
     }),
 });
 
