@@ -17,13 +17,13 @@ interface CreateContactItem {
     contactName: string;
     contactMobile: string;
     type: ContactType;
+    contactId?: string | undefined;
+    source: ContactSource;
 }
 
 interface CreatePayload {
     contacts: CreateContactItem[];
-    source: ContactSource;
     origin: ContactOrigin;
-    contactId?: string | undefined;
     listingId: string;
 }
 
@@ -85,7 +85,7 @@ class ContactAssociationService {
                             contactMobile: contact.contactMobile,
                             hashMobile: hashedMobile,
                             type: contact.type,
-                            source: payload.source,
+                            source: contact.source,
                         },
                         { new: true, runValidators: true }
                     );
@@ -96,9 +96,9 @@ class ContactAssociationService {
                     contactMobile: contact.contactMobile,
                     hashMobile: hashedMobile,
                     type: contact.type,
-                    source: payload.source,
+                    contactId: contact.contactId,
+                    source: contact.source,
                     origin: payload.origin,
-                    contactId: payload.contactId,
                     listingId: payload.listingId,
                     sub: user.sub,
                     firm_id: user.firm_id,

@@ -11,9 +11,9 @@ const contactAssociationSchema = new Schema({
     },
     hashMobile:{type:String},
     type: {type:String, enum:Object.values(ContactType)},
+    contactId: {type:String},
     source: {type:String, enum:Object.values(ContactSource)},
     origin: {type:String, enum:Object.values(ContactOrigin)},
-    contactId: {type:String},
     listingId: {type:String},
     sub: {type:String},  //sub is the brokerId here 
     firm_id: {type:String}
