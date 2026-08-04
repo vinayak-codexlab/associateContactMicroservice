@@ -82,7 +82,7 @@ class ContactAssociationService {
                     listingId: payload.listingId,
                     type: contact.type,
                     hashMobile: hashedMobile,
-                    $or: [{ sub: user.sub }, { sub: { $exists: false } }],
+                    $or: [{ broker_id: user.sub }, { broker_id: { $exists: false } }],
                 };
                 if (associationId) {
                     duplicateQuery._id = { $ne: associationId };
@@ -92,12 +92,12 @@ class ContactAssociationService {
                     throw new ApiError(409, "This mobile already exists for this listingId and type !");
                 }
                 if (associationId) {
-                    const existing = await ContactAssociationModel.findOne({ _id: associationId, sub: user.sub });
+                    const existing = await ContactAssociationModel.findOne({ _id: associationId, broker_id: user.sub });
                     if (!existing) {
                         throw new ApiError(404, "Contact association not found");
                     }
                     const updated = await ContactAssociationModel.findOneAndUpdate(
-                        { _id: associationId, sub: user.sub },
+                        { _id: associationId, broker_id: user.sub },
                         {
                             contactName: contact.contactName,
                             contactMobile: normalizedMobile,
@@ -119,7 +119,7 @@ class ContactAssociationService {
                     source: contact.source,
                     origin: payload.origin,
                     listingId: payload.listingId,
-                    sub: user.sub,
+                    broker_id: user.sub,
                     firm_id: user.firm_id,
                 });
                 return (created as any).toObject({ getters: true });
@@ -143,7 +143,7 @@ class ContactAssociationService {
                 return cached;
             }
 
-            const docs = await ContactAssociationModel.find({ listingId, sub }).select('-hashMobile').sort({createdAt:-1}).limit(10);
+            const docs = await ContactAssociationModel.find({ listingId, broker_id:sub }).select('-hashMobile').sort({createdAt:-1}).limit(10);
             const result = docs
                 .map((doc: any) => doc.toObject({ getters: true }))
                 .sort((a: { type?: string }, b: { type?: string }) => {
@@ -161,12 +161,12 @@ class ContactAssociationService {
     }
     async deleteContactAssociation(id: string,sub: string) {
         try {
-            const existing = await ContactAssociationModel.findOne({ _id: id, sub });
+            const existing = await ContactAssociationModel.findOne({ _id: id, broker_id:sub });
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
 
-            const deleted = await ContactAssociationModel.findOneAndDelete({ _id: id, sub });
+            const deleted = await ContactAssociationModel.findOneAndDelete({ _id: id, broker_id:sub });
             await this.invalidateListingCache(existing.listingId, sub);
 
             return deleted;
@@ -176,17 +176,17 @@ class ContactAssociationService {
     }
     async updateContactAssociationType(id: string,sub:string, type: ContactType) {
         try {
-            const existing = await ContactAssociationModel.findOne({ _id: id, sub });
+            const existing = await ContactAssociationModel.findOne({ _id: id, broker_id:sub });
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
             const updatedDoc = await ContactAssociationModel.findOneAndUpdate(
-                { _id: id, sub },
+                { _id: id, broker_id:sub },
                 { type },
                 { new: true, runValidators: true }
             );
 
-            await this.invalidateListingCache(existing.listingId, existing.sub);
+            await this.invalidateListingCache(existing.listingId,sub);
 
             return updatedDoc ? updatedDoc.toObject({ getters: true }) : null;
         } catch (err) {
@@ -198,7 +198,7 @@ class ContactAssociationService {
         data: UpdateContactAssociationData
     ) {
         try {
-            const existing = await ContactAssociationModel.findOne({ _id: id, sub });
+            const existing = await ContactAssociationModel.findOne({ _id: id, broker_id:sub });
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
@@ -209,13 +209,13 @@ class ContactAssociationService {
                 type: data.type,
                 hashMobile: hashedMobile,
                 _id: { $ne: id },
-                $or: [{ sub }, { sub: { $exists: false } }],
+                $or: [{ broker_id:sub }, { broker_id: { $exists: false } }],
             });
             if (existingMobile) {
                 throw new ApiError(409, "This mobile already exists for this listingId and type !");
             }
             const updatedData = await ContactAssociationModel.findOneAndUpdate(
-                { _id: id, sub },
+                { _id: id, broker_id:sub },
                 {...data, contactMobile: normalizedMobile, hashMobile:hashedMobile},
                 { new: true, runValidators: true }
             );

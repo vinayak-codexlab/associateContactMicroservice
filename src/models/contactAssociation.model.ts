@@ -15,7 +15,7 @@ const contactAssociationSchema = new Schema({
     source: {type:String, enum:Object.values(ContactSource)},
     origin: {type:String, enum:Object.values(ContactOrigin)},
     listingId: {type:String},
-    sub: {type:String},  //sub is the brokerId here 
+    broker_id: {type:String},  //broker_id is the sub here 
     firm_id: {type:String}
 },{
     timestamps:true,
