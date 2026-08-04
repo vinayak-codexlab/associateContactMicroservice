@@ -1,7 +1,7 @@
 import ContactAssociation from "../models/contactAssociation.model.js";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
 import { ApiError } from "../utils/ApiError.js";
-import { hashMobile, normalizePhoneNumber } from "../utils/phoneHelper.js";
+import { hashMobile } from "../utils/phoneHelper.js";
 import { deleteCache, getCache, setCache } from "../utils/redisHelper.js";
 
 const ContactAssociationModel: any = ContactAssociation;
@@ -76,7 +76,7 @@ class ContactAssociationService {
         try {
             const operations = payload.contacts.map(async (contact) => {
                 const associationId = contact._id || contact.id;
-                const normalizedMobile = normalizePhoneNumber(contact.contactMobile);
+                const normalizedMobile = contact.contactMobile;
                 const hashedMobile = await hashMobile(normalizedMobile);
                 const duplicateQuery: any = {
                     listingId: payload.listingId,
@@ -202,7 +202,7 @@ class ContactAssociationService {
             if (!existing) {
                 throw new ApiError(404, "Contact association not found");
             }
-            const normalizedMobile = normalizePhoneNumber(data.contactMobile);
+            const normalizedMobile = data.contactMobile;
             const hashedMobile = await hashMobile(normalizedMobile);
             const existingMobile = await ContactAssociationModel.findOne({
                 listingId: existing.listingId,

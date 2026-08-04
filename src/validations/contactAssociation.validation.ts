@@ -1,19 +1,36 @@
 import {z} from "zod";
 import { ContactOrigin, ContactSource, ContactType } from "../constants/contactAssociation.js";
-import { isValidInternationalPhoneNumber } from "../utils/phoneHelper.js";
+import { normalizedAndValidatePhone } from "../utils/phoneHelper.js";
 
 //hexadecimal-24
 const objectIdSchema = z
   .string()
   .regex(/^[a-f\d]{24}$/i, "Invalid ObjectId");
 
+const phoneSchema = z
+    .string()
+    .trim()
+    .min(1, "Contact Number is required !")
+    .transform((val, ctx)=>{
+        const normalized = normalizedAndValidatePhone(val,"IN");
+        if(!normalized){
+            ctx.addIssue({
+                code : z.ZodIssueCode.custom,
+                message: "Invalid mobile number format !",
+            });
+            return z.NEVER;
+        }
+        return normalized;
+    });
+
 const contactSchema = z.object({
     _id: z.string().min(1).optional(),
     id: z.string().min(1).optional(),
     contactName: z.string().min(1,"Contact name lenth is too short !").max(50).trim(),
-    contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
-        message: "Invalid mobile number",
-    }),
+    // contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
+    //     message: "Invalid mobile number",
+    // }),
+    contactMobile: phoneSchema,
     type: z.nativeEnum(ContactType),
     source: z.nativeEnum(ContactSource),
     contactId: objectIdSchema.optional(),
@@ -49,9 +66,10 @@ export const updateContactAssociationDataSchema = z.object({
     }),
     body: z.object({
         contactName: z.string().min(1, "Contact name length is too short!").max(50).trim(),
-        contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
-            message: "Invalid mobile number",
-        }),
+        // contactMobile: z.string().min(1, "Contact mobile is required").refine(isValidInternationalPhoneNumber, {
+        //     message: "Invalid mobile number",
+        // }),
+        contactMobile: phoneSchema,
         type: z.nativeEnum(ContactType),
         source: z.nativeEnum(ContactSource),
         contactId: z.string().optional()

@@ -11,13 +11,24 @@ const serviceMock = vi.hoisted(() => ({
     updateContactAssociationData: vi.fn(),
 }));
 
+const phoneHelperMock = vi.hoisted(() => ({
+    normalizedAndValidatePhone: vi.fn(() => "+919876543210"),
+}));
+
 vi.mock("../src/services/contactAssociation.service.js", () => ({
     default: serviceMock,
 }));
 
+vi.mock("../src/utils/phoneHelper.js", () => ({
+    normalizedAndValidatePhone: phoneHelperMock.normalizedAndValidatePhone,
+    encryptContact: vi.fn((text: string) => text),
+    decryptContact: vi.fn((text: string) => text),
+    hashMobile: vi.fn((text: string) => text),
+}));
+
 import app from "../src/app.js";
 
-const baseUrl = "/v1/user/listing";
+const baseUrl = "/v1/user/listing/contact-associate";
 const user = { sub: "broker-123", firm_id: "firm-456" };
 
 const authCookie = (name = "accessToken") =>
@@ -25,12 +36,16 @@ const authCookie = (name = "accessToken") =>
 
 const createPayload = {
     contacts: [
-        { contactName: "Ada Lovelace", contactMobile: "9876543210", type: "owner" },
+        {
+            contactName: "Ada Lovelace",
+            contactMobile: "9876543210",
+            type: "owner",
+            source: "manual",
+            contactId: "0123456789abcdef01234567",
+        },
     ],
-    source: "manual",
     origin: "app",
-    contactId: "contact-123",
-    listingId: "listing-123",
+    listingId: "0123456789abcdef01234567",
 };
 
 describe("contact association endpoints", () => {
@@ -100,12 +115,21 @@ describe("contact association endpoints", () => {
         expect(response.status).toBe(201);
         expect(response.body).toEqual({
             success: true,
-            message: "contact created successfully",
+            message: "Contact associated successfully",
             data: createdContacts,
         });
         expect(serviceMock.createContactAssociation).toHaveBeenCalledWith(
-            createPayload,
-            expect.objectContaining(user),
+            expect.objectContaining({
+                contacts: [
+                    expect.objectContaining({
+                        ...createPayload.contacts[0],
+                        contactMobile: "+919876543210",
+                    }),
+                ],
+                origin: createPayload.origin,
+                listingId: createPayload.listingId,
+            }),
+            expect.objectContaining({ sub: user.sub, firm_id: user.firm_id }),
         );
     });
 
@@ -166,7 +190,7 @@ describe("contact association endpoints", () => {
             message: "contact type updated successfully",
             data: updatedContact,
         });
-        expect(serviceMock.updateContactAssociationType).toHaveBeenCalledWith("association-123", "tenant");
+        expect(serviceMock.updateContactAssociationType).toHaveBeenCalledWith("association-123", user.sub, "tenant");
     });
 
     it("returns a conflict when updating a contact would duplicate an existing listing/type/mobile", async () => {
@@ -175,13 +199,14 @@ describe("contact association endpoints", () => {
             contactMobile: "9123456789",
             type: "contact_person",
             source: "import",
+            contactId: "0123456789abcdef01234567",
         };
         serviceMock.updateContactAssociationData.mockRejectedValueOnce(
             new ApiError(409, "This mobile already exists for this listingId and type !"),
         );
 
         const response = await request(app)
-            .put(`${baseUrl}/association-123/data`)
+            .put(`${baseUrl}/association-123`)
             .set("Cookie", authCookie())
             .send(updatePayload);
 
@@ -198,12 +223,13 @@ describe("contact association endpoints", () => {
             contactMobile: "9123456789",
             type: "contact_person",
             source: "import",
+            contactId: "0123456789abcdef01234567",
         };
         const updatedContact = { _id: "association-123", ...updatePayload };
         serviceMock.updateContactAssociationData.mockResolvedValue(updatedContact);
 
         const response = await request(app)
-            .put(`${baseUrl}/association-123/data`)
+            .put(`${baseUrl}/association-123`)
             .set("Cookie", authCookie())
             .send(updatePayload);
 
@@ -216,7 +242,10 @@ describe("contact association endpoints", () => {
         expect(serviceMock.updateContactAssociationData).toHaveBeenCalledWith(
             "association-123",
             user.sub,
-            updatePayload,
+            expect.objectContaining({
+                ...updatePayload,
+                contactMobile: "+919876543210",
+            }),
         );
     });
 });
