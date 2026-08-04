@@ -5,6 +5,12 @@ import { hashMobile, normalizePhoneNumber } from "../utils/phoneHelper.js";
 import { deleteCache, getCache, setCache } from "../utils/redisHelper.js";
 
 const ContactAssociationModel: any = ContactAssociation;
+const contactTypePriority: Record<string, number> = {
+    [ContactType.OWNER]: 0,
+    [ContactType.CONTACT_PERSON]: 1,
+    [ContactType.TENANT]: 2,
+    [ContactType.PREVIOUS_TENANT]: 3,
+};
 
 interface User {
     sub: string;
@@ -138,7 +144,13 @@ class ContactAssociationService {
             }
 
             const docs = await ContactAssociationModel.find({ listingId, sub }).select('-hashMobile').sort({createdAt:-1}).limit(10);
-            const result = docs.map((doc: any) => doc.toObject({ getters: true }));
+            const result = docs
+                .map((doc: any) => doc.toObject({ getters: true }))
+                .sort((a: { type?: string }, b: { type?: string }) => {
+                    const aPriority = contactTypePriority[a.type ?? ""] ?? Number.MAX_SAFE_INTEGER;
+                    const bPriority = contactTypePriority[b.type ?? ""] ?? Number.MAX_SAFE_INTEGER;
+                    return aPriority - bPriority;
+                });
 
             await setCache(cacheKey, result);
 
