@@ -7,9 +7,10 @@ import { deleteCache, getCache, setCache } from "../utils/redisHelper.js";
 const ContactAssociationModel: any = ContactAssociation;
 const contactTypePriority: Record<string, number> = {
     [ContactType.OWNER]: 0,
-    [ContactType.CONTACT_PERSON]: 1,
-    [ContactType.TENANT]: 2,
-    [ContactType.PREVIOUS_TENANT]: 3,
+    [ContactType.PREVIOUS_OWNER]:1,
+    [ContactType.CONTACT_PERSON]: 2,
+    [ContactType.TENANT]: 3,
+    [ContactType.PREVIOUS_TENANT]: 4,
 };
 
 interface User {
